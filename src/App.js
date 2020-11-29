@@ -1,10 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  useHistory,
+  Redirect,
+} from 'react-router-dom'
 import firebase from 'firebase/app'
 import * as firebaseui from 'firebaseui'
 import 'firebaseui/dist/firebaseui.css'
 
-import logo from './logo.svg'
-import './App.css'
+import HomePage from './pages/HomePage'
+import AuthPage from './pages/AuthPage'
+import { AuthProvider, useAuth } from './features/auth'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBi61brUhtspSb67GCblNm-2OJbg9zIMoE',
@@ -19,12 +27,6 @@ const firebaseConfig = {
 
 const authConfig = {
   signInFlow: 'popup',
-  signInSuccessWithAuthResult: function (authResult, redirectUrl) {
-    // User successfully signed in.
-    // Return type determines whether we continue the redirect automatically
-    // or whether we leave that to developer to handle.
-    return false
-  },
   signInOptions: [
     // List of OAuth providers supported.
     firebase.auth.GoogleAuthProvider.PROVIDER_ID,
@@ -36,31 +38,49 @@ firebase.initializeApp(firebaseConfig)
 const ui = new firebaseui.auth.AuthUI(firebase.auth())
 
 function App() {
-  const [user, setUser] = useState(null)
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes />
+      </Router>
+    </AuthProvider>
+  )
+}
+
+function Routes() {
+  const { actions } = useAuth()
+  const { signIn, signOut } = actions
+
+  const history = useHistory()
 
   useEffect(() => {
-    firebase.auth().onAuthStateChanged(setUser)
-  }, [])
-  useEffect(() => {
-    if (ui.isPendingRedirect()) {
-      ui.start('#firebaseui-auth-container', authConfig)
-    }
+    firebase.auth().onAuthStateChanged((user) => {
+      console.log('user: ', user)
+      if (user) {
+        signIn(user)
+        history.replace('/home')
+      } else {
+        signOut()
+        history.replace('/auth')
+      }
+      return false
+    })
+  }, [history, signIn, signOut])
+
+  const initAuth = useCallback(() => {
+    ui.start('#firebaseui-auth-container', authConfig)
   }, [])
 
   return (
-    <div className='App'>
-      <header className='App-header'>
-        <img src={logo} className='App-logo' alt='logo' />
-        <p>
-          {user ? (
-            <>Welcome back, {user.displayName}</>
-          ) : (
-            <>Sign in to continue</>
-          )}
-        </p>
-        <div id='firebaseui-auth-container'></div>
-      </header>
-    </div>
+    <Switch>
+      <Route path='/auth'>
+        <AuthPage init={initAuth} />
+      </Route>
+      <Route path='/home'>
+        <HomePage />
+      </Route>
+      <Redirect to='/auth' />
+    </Switch>
   )
 }
 
