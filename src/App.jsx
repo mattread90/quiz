@@ -13,6 +13,7 @@ import 'firebaseui/dist/firebaseui.css'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
 import { AuthProvider, useAuth } from './features/auth'
+import QuizPage from './pages/QuizPage'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBi61brUhtspSb67GCblNm-2OJbg9zIMoE',
@@ -78,6 +79,9 @@ function Routes() {
       </Route>
       <Route path='/home'>
         <HomePage />
+      </Route>
+      <Route path='/quiz/:quizId'>
+        <QuizPage/>
       </Route>
       <Redirect to='/auth' />
     </Switch>
