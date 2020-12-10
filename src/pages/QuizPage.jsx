@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import firebase from 'firebase'
 import shuffle from 'underscore/modules/shuffle'
 
-import { reducer, receive, ping, getParticipants, getLeaderboard, newQuestion, chooseAnswer, completeQuestion, getMyAnswer, isHost} from "../features/quiz";
+import { reducer, receive, ping, getParticipants, getLeaderboard, newQuestion, chooseAnswer, completeQuestion, getMyAnswer, isHost, clearQuestion} from "../features/quiz";
 import { useAuth } from "../features/auth";
 
 export default function QuizPage() {
@@ -25,6 +25,7 @@ export default function QuizPage() {
     dispatch(chooseAnswer(user.uid, event.target.id))
   }, [dispatch, user])
   const onCompleteClick = useCallback(() => dispatch(completeQuestion()), [dispatch])
+  const onContinueClick = useCallback(() => dispatch(clearQuestion()), [dispatch])
 
   return <>
     <header>
@@ -62,6 +63,7 @@ export default function QuizPage() {
                 question={quiz.question}
                 onAnswerClick={onAnswerClick}
                 onCompleteClick={onCompleteClick} 
+                onContinueClick={onContinueClick}
                 myAnswer={getMyAnswer(quiz, user.uid)}
                 isHost={isHost(quiz, user.uid)}
               /> : 
@@ -75,23 +77,38 @@ export default function QuizPage() {
     </>
 }
 
-function Question({ question, onAnswerClick, onCompleteClick, myAnswer, isHost }) {
-  const { question: questionText, answers } = question
+function Question({ question, onAnswerClick, onCompleteClick, onContinueClick, myAnswer, isHost }) {
+  const { question: questionText, answers, correct_answer, status } = question
   return (
     <>
       <h2>Current question:</h2>
       <b>{questionText}</b>
       <ul>
         {
-          answers.map(answer => (
+          status === 'IN_PROGRESS' && answers.map(answer => (
             <li>
               <input type='radio' name="answer" id={answer} value={answer} checked={answer === myAnswer} onChange={onAnswerClick} />
               <label for={answer}>{answer}</label>
             </li>
           ))
         }
+        {
+          status === 'COMPLETE' && answers.map(answer => (
+            <li>
+              {answer === correct_answer ? <>✅ </> : <>❌ </>}
+              {answer}
+            </li>
+          ))
+        }
       </ul>
-      {isHost && <button onClick={onCompleteClick}>Complete question</button>}
+      {isHost ?
+        status === 'IN_PROGRESS' ?
+          <button onClick={onCompleteClick}>Complete question</button> :
+          status === 'COMPLETE' ?
+            <button onClick={onContinueClick}>Continue</button> :
+            null :
+              null
+      }
     </>
   );
 }

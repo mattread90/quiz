@@ -42,6 +42,7 @@ export function reducer(quiz, action) {
         question: {
           ...action.payload,
           userAnswers: { _: 'blank' },
+          status: 'IN_PROGRESS',
         },
       }
     case 'CHOOSE_ANSWER':
@@ -59,7 +60,10 @@ export function reducer(quiz, action) {
       const { correct_answer, userAnswers } = quiz.question
       return {
         ...quiz,
-        question: null,
+        question: {
+          ...quiz.question,
+          status: 'COMPLETE',
+        },
         scores: Object.values(quiz.participants).reduce(
           (newScores, participant) => {
             const { userId } = participant
@@ -75,6 +79,11 @@ export function reducer(quiz, action) {
         ),
       }
     }
+    case 'CLEAR_QUESTION':
+      return {
+        ...quiz,
+        question: null,
+      }
     default:
       throw new Error('Unrecognized action in quiz reducer:', action.type)
   }
@@ -115,6 +124,12 @@ export function chooseAnswer(userId, answer) {
 export function completeQuestion() {
   return {
     type: 'COMPLETE_QUESTION',
+  }
+}
+
+export function clearQuestion() {
+  return {
+    type: 'CLEAR_QUESTION',
   }
 }
 
