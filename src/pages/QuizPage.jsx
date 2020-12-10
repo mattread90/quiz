@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import firebase from 'firebase'
+import shuffle from 'underscore/modules/shuffle'
 
 import { reducer, receive, ping, getParticipants, getLeaderboard, newQuestion, chooseAnswer, completeQuestion, getMyAnswer} from "../features/quiz";
 import { useAuth } from "../features/auth";
@@ -15,7 +16,9 @@ export default function QuizPage() {
 
   const onNewQuestionClick = useCallback(async () => {
     const question = await fetchNewQuestion();
-    dispatch(newQuestion(question))
+    const { correct_answer, incorrect_answers } = question;
+    const answers = shuffle([...incorrect_answers, correct_answer])
+    dispatch(newQuestion({...question, answers}))
   }, [dispatch])
 
   const onAnswerClick = useCallback((event) => {
@@ -70,25 +73,19 @@ export default function QuizPage() {
 }
 
 function Question({ question, onAnswerClick, onCompleteClick, myAnswer }) {
-  const { question: questionText, correct_answer, incorrect_answers } = question
+  const { question: questionText, answers } = question
   return (
     <>
       <h2>Current question:</h2>
       <b>{questionText}</b>
       <ul>
         {
-          <>
+          answers.map(answer => (
             <li>
-              <input type='radio' name="answer" id={correct_answer} value={correct_answer} checked={correct_answer === myAnswer} onChange={onAnswerClick} />
-              <label for={correct_answer}>{correct_answer}</label>
+              <input type='radio' name="answer" id={answer} value={answer} checked={answer === myAnswer} onChange={onAnswerClick} />
+              <label for={answer}>{answer}</label>
             </li>
-            {incorrect_answers.map(answer => (
-              <li>
-                <input type='radio' name="answer" id={answer} value={answer} checked={answer === myAnswer} onChange={onAnswerClick} />
-                <label for={answer}>{answer}</label>
-              </li>
-            ))}
-          </>
+          ))
         }
       </ul>
       <button onClick={onCompleteClick}>Complete question</button>
