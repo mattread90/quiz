@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import firebase from 'firebase'
 
-import { reducer, receive, ping, isOnline} from "../features/quiz";
+import { reducer, receive, ping, getParticipants, getLeaderboard} from "../features/quiz";
 import { useAuth } from "../features/auth";
 
 export default function QuizPage() {
@@ -26,14 +26,23 @@ export default function QuizPage() {
           <h2>Participants:</h2>
           <ul>
             {
-              Object.values(quiz.participants || {}).map(participant => (
-                <li>{participant.displayName} <i>
-                  {isOnline(participant) ? <>(Online)</> : <>(Offline)</>}
+              getParticipants(quiz).map(({userId, displayName, isOnline, isHost}) => (
+                <li key={userId}>{displayName} <i>
+                  {isOnline ? <>(Online)</> : <>(Offline)</>}
+                  {isHost && <>(Host)</>}
                   </i>
                 </li>
               ))
             }
           </ul>
+          <h2>Leaderboard:</h2>
+          <ol>
+            {
+              getLeaderboard(quiz).map(({userId,displayName,score }) => (
+                <li key={userId}>{displayName}: {score}</li>
+              ))
+            }
+          </ol>
         </>
         : <>Loading...</>
      }
@@ -68,7 +77,7 @@ function useQuiz(quizId, user) {
         dispatch(ping({
           userId: user.uid,
           displayName: user.displayName,
-          timestamp: new Date().toString()
+          timestamp: new Date().getTime()
         }))
       }
     }, 5000);

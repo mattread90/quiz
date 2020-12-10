@@ -59,8 +59,25 @@ export function ping({ userId, displayName, timestamp }) {
   }
 }
 
-export function isOnline(user) {
+function isOnline(user) {
   const now = new Date()
   const lastPing = new Date(user.lastPing)
   return now.getTime() - lastPing.getTime() <= 5000
+}
+
+export function getParticipants(quiz) {
+  return Object.values(quiz.participants).map((participant) => ({
+    ...participant,
+    isHost: participant.userId === quiz.host,
+    isOnline: isOnline(participant),
+  }))
+}
+
+export function getLeaderboard(quiz) {
+  return Object.values(quiz.participants)
+    .map((participant) => ({
+      ...participant,
+      score: quiz.scores[participant.userId] || 0,
+    }))
+    .sort((a, b) => a.score - b.score)
 }
