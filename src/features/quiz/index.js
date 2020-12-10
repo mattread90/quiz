@@ -121,7 +121,7 @@ export function completeQuestion() {
 function isOnline(user) {
   const now = new Date()
   const lastPing = new Date(user.lastPing)
-  return now.getTime() - lastPing.getTime() <= 5000
+  return now.getTime() - lastPing.getTime() <= 15000
 }
 
 export function getParticipants(quiz) {
