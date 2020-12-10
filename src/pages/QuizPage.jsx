@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import firebase from 'firebase'
 import shuffle from 'underscore/modules/shuffle'
 
-import { reducer, receive, ping, getParticipants, getLeaderboard, newQuestion, chooseAnswer, completeQuestion, getMyAnswer} from "../features/quiz";
+import { reducer, receive, ping, getParticipants, getLeaderboard, newQuestion, chooseAnswer, completeQuestion, getMyAnswer, isHost} from "../features/quiz";
 import { useAuth } from "../features/auth";
 
 export default function QuizPage() {
@@ -63,8 +63,11 @@ export default function QuizPage() {
                 onAnswerClick={onAnswerClick}
                 onCompleteClick={onCompleteClick} 
                 myAnswer={getMyAnswer(quiz, user.uid)}
+                isHost={isHost(quiz, user.uid)}
               /> : 
-              <button onClick={onNewQuestionClick}>Next question</button>
+              isHost(quiz, user.uid) ? 
+                <button onClick={onNewQuestionClick}>Next question</button> :
+                null
           }
         </>
         : <>Loading...</>
@@ -72,7 +75,7 @@ export default function QuizPage() {
     </>
 }
 
-function Question({ question, onAnswerClick, onCompleteClick, myAnswer }) {
+function Question({ question, onAnswerClick, onCompleteClick, myAnswer, isHost }) {
   const { question: questionText, answers } = question
   return (
     <>
@@ -88,7 +91,7 @@ function Question({ question, onAnswerClick, onCompleteClick, myAnswer }) {
           ))
         }
       </ul>
-      <button onClick={onCompleteClick}>Complete question</button>
+      {isHost && <button onClick={onCompleteClick}>Complete question</button>}
     </>
   );
 }

@@ -144,3 +144,7 @@ export function getLeaderboard(quiz) {
 export function getMyAnswer(quiz, userId) {
   return quiz.question.userAnswers[userId]
 }
+
+export function isHost(quiz, userId) {
+  return quiz.host === userId
+}
