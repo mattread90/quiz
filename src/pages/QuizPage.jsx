@@ -1,8 +1,8 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import firebase from 'firebase'
 
-import { reducer, receive, ping, getParticipants, getLeaderboard} from "../features/quiz";
+import { reducer, receive, ping, getParticipants, getLeaderboard, newQuestion, chooseAnswer, completeQuestion, getMyAnswer} from "../features/quiz";
 import { useAuth } from "../features/auth";
 
 export default function QuizPage() {
@@ -11,7 +11,17 @@ export default function QuizPage() {
     state: { user },
   } = useAuth()
   
-  const { quiz, quizNotFound } = useQuiz(quizId, user)  
+  const { quiz, quizNotFound, dispatch } = useQuiz(quizId, user)
+
+  const onNewQuestionClick = useCallback(async () => {
+    const question = await fetchNewQuestion();
+    dispatch(newQuestion(question))
+  }, [dispatch])
+
+  const onAnswerClick = useCallback((event) => {
+    dispatch(chooseAnswer(user.uid, event.target.id))
+  }, [dispatch, user])
+  const onCompleteClick = useCallback(() => dispatch(completeQuestion()), [dispatch])
 
   return <>
     <header>
@@ -43,10 +53,47 @@ export default function QuizPage() {
               ))
             }
           </ol>
+          {
+            quiz.question ?
+              <Question 
+                question={quiz.question}
+                onAnswerClick={onAnswerClick}
+                onCompleteClick={onCompleteClick} 
+                myAnswer={getMyAnswer(quiz, user.uid)}
+              /> : 
+              <button onClick={onNewQuestionClick}>Next question</button>
+          }
         </>
         : <>Loading...</>
      }
     </>
+}
+
+function Question({ question, onAnswerClick, onCompleteClick, myAnswer }) {
+  const { question: questionText, correct_answer, incorrect_answers } = question
+  return (
+    <>
+      <h2>Current question:</h2>
+      <b>{questionText}</b>
+      <ul>
+        {
+          <>
+            <li>
+              <input type='radio' name="answer" id={correct_answer} value={correct_answer} checked={correct_answer === myAnswer} onChange={onAnswerClick} />
+              <label for={correct_answer}>{correct_answer}</label>
+            </li>
+            {incorrect_answers.map(answer => (
+              <li>
+                <input type='radio' name="answer" id={answer} value={answer} checked={answer === myAnswer} onChange={onAnswerClick} />
+                <label for={answer}>{answer}</label>
+              </li>
+            ))}
+          </>
+        }
+      </ul>
+      <button onClick={onCompleteClick}>Complete question</button>
+    </>
+  );
 }
 
 function useQuiz(quizId, user) {
@@ -96,4 +143,11 @@ function useDocument(docRef) {
     return ref.current
   }
   return get()
+}
+
+async function fetchNewQuestion() {
+  const response = await fetch('https://opentdb.com/api.php?amount=1&type=multiple');
+  const data = await response.json();
+  const question = data.results[0];
+  return question;
 }

@@ -36,6 +36,45 @@ export function reducer(quiz, action) {
         },
       }
     }
+    case 'NEW_QUESTION':
+      return {
+        ...quiz,
+        question: {
+          ...action.payload,
+          userAnswers: { _: 'blank' },
+        },
+      }
+    case 'CHOOSE_ANSWER':
+      return {
+        ...quiz,
+        question: {
+          ...quiz.question,
+          userAnswers: {
+            ...quiz.question.userAnswers,
+            [action.payload.userId]: action.payload.answer,
+          },
+        },
+      }
+    case 'COMPLETE_QUESTION': {
+      const { correct_answer, userAnswers } = quiz.question
+      return {
+        ...quiz,
+        question: null,
+        scores: Object.values(quiz.participants).reduce(
+          (newScores, participant) => {
+            const { userId } = participant
+            const currentScore = quiz.scores[userId] || 0
+            if (userAnswers[userId] === correct_answer) {
+              newScores[userId] = currentScore + 1
+            } else {
+              newScores[userId] = currentScore
+            }
+            return newScores
+          },
+          {}
+        ),
+      }
+    }
     default:
       throw new Error('Unrecognized action in quiz reducer:', action.type)
   }
@@ -59,6 +98,26 @@ export function ping({ userId, displayName, timestamp }) {
   }
 }
 
+export function newQuestion(question) {
+  return {
+    type: 'NEW_QUESTION',
+    payload: question,
+  }
+}
+
+export function chooseAnswer(userId, answer) {
+  return {
+    type: 'CHOOSE_ANSWER',
+    payload: { userId, answer },
+  }
+}
+
+export function completeQuestion() {
+  return {
+    type: 'COMPLETE_QUESTION',
+  }
+}
+
 function isOnline(user) {
   const now = new Date()
   const lastPing = new Date(user.lastPing)
@@ -79,5 +138,9 @@ export function getLeaderboard(quiz) {
       ...participant,
       score: quiz.scores[participant.userId] || 0,
     }))
-    .sort((a, b) => a.score - b.score)
+    .sort((a, b) => b.score - a.score)
+}
+
+export function getMyAnswer(quiz, userId) {
+  return quiz.question.userAnswers[userId]
 }
