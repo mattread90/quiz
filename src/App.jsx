@@ -56,7 +56,6 @@ function Routes() {
 
   useEffect(() => {
     firebase.auth().onAuthStateChanged((user) => {
-      console.log('user: ', user)
       if (user) {
         signIn(user)
         history.replace('/home')

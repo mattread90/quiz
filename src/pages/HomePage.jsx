@@ -31,6 +31,7 @@ export default function HomePage() {
       {
         id: newQuizId,
         name: `${user.displayName}'s Quiz`,
+        host: user.uid,
       },
       (error) => {
         if (error) {
